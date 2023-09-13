@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestSum(t *testing.T) {
-	input1 := "1+1+1;2+2+2\n"
+	input1 := "1+1+1,2+2+2\n"
 	total1 := float64(9)
 
 	sg, ts, err := calculate(input1)
@@ -25,7 +25,7 @@ func TestSum(t *testing.T) {
 	}
 
 	// Should behave well when input finished with ;
-	input2 := "1+1+1;2+2+2;\n"
+	input2 := "1+1+1,2+2+2,\n"
 	total2 := float64(9)
 
 	sg2, ts2, err := calculate(input2)
