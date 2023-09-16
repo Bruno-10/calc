@@ -17,8 +17,8 @@ func main() {
 		fmt.Println(err)
 	}
 
-	for i, o := range sg {
-		fmt.Printf("Group %d: %f", i, o)
+	for i, op := range sg {
+		fmt.Printf("Group %d: %f", i, op)
 		fmt.Println()
 	}
 
@@ -46,11 +46,10 @@ func divide(cs float64, cf float64) float64 {
 func calculate(text string) (float64, error) {
 	text = "+" + text
 
-	var ts float64
-	var lo func(float64, float64) float64
+	var lop func(float64, float64) float64
 	var cs float64
-
-	cns := "0"
+	var lns string
+	var cns string
 
 	ops := map[string]func(float64, float64) float64{
 		"+": sum,
@@ -58,68 +57,76 @@ func calculate(text string) (float64, error) {
 		"/": divide,
 	}
 
-	for _, v := range text {
+	for i, v := range text {
 		vString := string(v)
-
-		o, ok := ops[vString]
-		if ok && cns != "" {
-			cf, err := strconv.ParseFloat(cns, 64)
-			if err != nil {
-				return 0, err
-			}
-
-			if cs == 0 && vString != "+" {
-				cs = 1
-			}
-			cs = o(cs, cf)
-			lo = o
-			cns = ""
-			continue
-		}
 
 		cns += vString
 
-		if vString == "," || vString == "\n" {
+		op, ok := ops[vString]
+		if ok {
 			cns, _ = strings.CutSuffix(cns, vString)
+			lop = op
 			if cns != "" {
-				cf, err := strconv.ParseFloat(cns, 64)
-				if err != nil {
-					return 0, err
-				}
-				cs = lo(cs, cf)
+				lns = cns
 				cns = ""
 			}
-			if cs != 0 {
-				ts += cs
-				cs = 0
+
+			continue
+		}
+
+		if i+1 < len(text) {
+			_, nopok := ops[string(text[i+1])]
+			if cns != "" && lns != "" && lop != nil && (nopok || string(text[i+1]) == "\n") {
+				cf, err := strconv.ParseFloat(cns, 64)
+				if err != nil {
+					return 0, fmt.Errorf("Parsing cf: %w", err)
+				}
+
+				lf, err := strconv.ParseFloat(lns, 64)
+				if err != nil {
+					return 0, fmt.Errorf("Parsing lf: %w", err)
+				}
+
+				cs = lop(lf, cf)
+				cns = fmt.Sprintf("%f", cs)
+				lns = ""
+				lop = nil
+			}
+			continue
+		}
+
+		if cns != "" && vString == "\n" && lop != nil {
+			cns = strings.ReplaceAll(cns, vString, "")
+			cf, err := strconv.ParseFloat(cns, 64)
+			if err == nil {
+				cs = cf
 			}
 		}
 	}
 
-	return ts, nil
+	return cs, nil
 }
 
 func execute(text string) (float64, []float64, error) {
 	var sg []float64
 	var total float64
+	text, _ = strings.CutSuffix(text, ",")
 	sections := strings.Split(text, ",")
-
 	for _, v := range sections {
-		sums := strings.Split(v, "+")
+		if v != "\n" {
+			sums := strings.Split(v, "+")
 
-		var st float64
-		for _, sv := range sums {
-			ts, err := calculate(sv + "\n")
-			if err != nil {
-				return 0, nil, err
+			var st float64
+			for _, sv := range sums {
+				ts, err := calculate(sv + "\n")
+				if err != nil {
+					return 0, nil, fmt.Errorf("Calculate error: %w", err)
+				}
+				st += ts
 			}
-			st += ts
+			total += st
+			sg = append(sg, st)
 		}
-		sg = append(sg, st)
-	}
-
-	for _, v := range sg {
-		total += v
 	}
 
 	return total, sg, nil
