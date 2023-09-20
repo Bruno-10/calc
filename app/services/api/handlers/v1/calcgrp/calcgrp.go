@@ -22,6 +22,10 @@ func New(calc *calc.Core) *Handlers {
 	}
 }
 
+// TODO: All exported identifiers need a comment with the name of the identifer
+// comming first.  Ex.
+//
+// Execute yada yada yada
 func (h *Handlers) Execute(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var input struct{ Input string }
 	if err := web.Decode(r, &input); err != nil {

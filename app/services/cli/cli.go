@@ -10,9 +10,12 @@ import (
 )
 
 func main() {
-	r := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter text: ")
+
+	// TODO: YOU CAN'T IGNORE THE ERROR!!!!
+	r := bufio.NewReader(os.Stdin)
 	text, _ := r.ReadString('\n')
+
 	result, err := calc.Execute(context.Background(), text)
 	if err != nil {
 		fmt.Println(err)
