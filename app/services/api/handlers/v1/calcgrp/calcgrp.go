@@ -23,12 +23,12 @@ func New(calc *calc.Core) *Handlers {
 }
 
 func (h *Handlers) Execute(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var input string
+	var input struct{ Input string }
 	if err := web.Decode(r, &input); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
 
-	result, err := h.calc.Execute(ctx, input)
+	result, err := h.calc.Execute(ctx, input.Input)
 	if err != nil {
 		return fmt.Errorf("execute: usr[%+v]: %w", result, err)
 	}

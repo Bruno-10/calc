@@ -10,8 +10,8 @@ import (
 )
 
 type Result struct {
-	Total    float64
-	SumGroup []float64
+	Total    float64   `json:"total"`
+	SumGroup []float64 `json:"sumGroup"`
 }
 
 // Core manages the set of APIs for user access.

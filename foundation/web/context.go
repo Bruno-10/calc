@@ -3,6 +3,8 @@ package web
 import (
 	"context"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ctxKey int
@@ -12,6 +14,7 @@ const key ctxKey = 1
 // Values represent state for each request.
 type Values struct {
 	TraceID    string
+	Tracer     trace.Tracer
 	Now        time.Time
 	StatusCode int
 }

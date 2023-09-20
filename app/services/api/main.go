@@ -8,15 +8,25 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
 	"github.com/Bruno-10/calc/app/services/api/handlers"
+	"github.com/Bruno-10/calc/business/web/v1/debug"
 	"github.com/Bruno-10/calc/foundation/logger"
 	"github.com/Bruno-10/calc/foundation/web"
 	"github.com/ardanlabs/conf/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
+// TODO: Delete OT, Too much for a simple project.
 var build = "develop"
 
 func main() {
@@ -32,19 +42,24 @@ func main() {
 		return web.GetTraceID(ctx)
 	}
 
-	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "API", traceIDFunc, events)
+	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "CALC-API", traceIDFunc, events)
 
 	// -------------------------------------------------------------------------
 
 	ctx := context.Background()
 
 	if err := run(ctx, log); err != nil {
-		fmt.Println(ctx, "startup", "msg", err)
+		log.Error(ctx, "startup", "msg", err)
 		os.Exit(1)
 	}
 }
 
 func run(ctx context.Context, log *logger.Logger) error {
+
+	// -------------------------------------------------------------------------
+	// GOMAXPROCS
+
+	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
 	// -------------------------------------------------------------------------
 	// Configuration
@@ -56,7 +71,13 @@ func run(ctx context.Context, log *logger.Logger) error {
 			WriteTimeout    time.Duration `conf:"default:10s"`
 			IdleTimeout     time.Duration `conf:"default:120s"`
 			ShutdownTimeout time.Duration `conf:"default:20s"`
-			APIHost         string        `conf:"default:127.0.0.1:3000"`
+			APIHost         string        `conf:"default:192.168.1.91:3000"`
+			DebugHost       string        `conf:"default:127.0.0.1:4000"`
+		}
+		Tempo struct {
+			ReporterURI string  `conf:"default:127.0.0.1:4317"`
+			ServiceName string  `conf:"default:calc-api"`
+			Probability float64 `conf:"default:1"` // Shouldn't use a high value in non-developer systems. 0.05 should be enough for most systems. Some might want to have this even lower
 		}
 	}{
 		Version: conf.Version{
@@ -90,7 +111,42 @@ func run(ctx context.Context, log *logger.Logger) error {
 	expvar.NewString("build").Set(build)
 
 	// -------------------------------------------------------------------------
+	// Initialize authentication support
+
+	log.Info(ctx, "startup", "status", "initializing authentication support")
+
+	// -------------------------------------------------------------------------
+	// Start Tracing Support
+
+	log.Info(ctx, "startup", "status", "initializing OT/Tempo tracing support")
+
+	traceProvider, err := startTracing(
+		cfg.Tempo.ServiceName,
+		cfg.Tempo.ReporterURI,
+		cfg.Tempo.Probability,
+	)
+	if err != nil {
+		return fmt.Errorf("starting tracing: %w", err)
+	}
+	defer traceProvider.Shutdown(context.Background())
+
+	tracer := traceProvider.Tracer("calc")
+
+	// -------------------------------------------------------------------------
+	// Start Debug Service
+
+	go func() {
+		log.Info(ctx, "startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
+
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.Mux()); err != nil {
+			log.Error(ctx, "shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "msg", err)
+		}
+	}()
+
+	// -------------------------------------------------------------------------
 	// Start API Service
+
+	log.Info(ctx, "startup", "status", "initializing V1 API support")
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
@@ -98,6 +154,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 	cfgMux := handlers.APIMuxConfig{
 		Build:    build,
 		Shutdown: shutdown,
+		Log:      log,
+		Tracer:   tracer,
 	}
 	apiMux := handlers.APIMux(cfgMux, handlers.WithCORS("*"))
 
@@ -107,6 +165,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
 	}
 
 	serverErrors := make(chan error, 1)
@@ -138,4 +197,54 @@ func run(ctx context.Context, log *logger.Logger) error {
 	}
 
 	return nil
+}
+
+// =============================================================================
+
+// startTracing configure open telemetry to be used with Grafana Tempo.
+func startTracing(serviceName string, reporterURI string, probability float64) (*trace.TracerProvider, error) {
+
+	// WARNING: The current settings are using defaults which may not be
+	// compatible with your project. Please review the documentation for
+	// opentelemetry.
+
+	exporter, err := otlptrace.New(
+		context.Background(),
+		otlptracegrpc.NewClient(
+			otlptracegrpc.WithInsecure(), // This should be configurable
+			otlptracegrpc.WithEndpoint(reporterURI),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating new exporter: %w", err)
+	}
+
+	traceProvider := trace.NewTracerProvider(
+		trace.WithSampler(trace.TraceIDRatioBased(probability)),
+		trace.WithBatcher(exporter,
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+			trace.WithBatchTimeout(trace.DefaultScheduleDelay*time.Millisecond),
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+		),
+		trace.WithResource(
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String(serviceName),
+			),
+		),
+	)
+
+	// We must set this provider as the global provider for things to work,
+	// but we pass this provider around the program where needed to collect
+	// our traces.
+	otel.SetTracerProvider(traceProvider)
+
+	// Chooses the HTTP header formats we extract incoming trace contexts from,
+	// and the headers we set in outgoing requests.
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
+
+	return traceProvider, nil
 }
