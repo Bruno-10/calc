@@ -23,7 +23,8 @@ func NewCore(log *logger.Logger) *Core {
 	}
 }
 
-// Execute does what!!!!
+// Execute iterates splits the string into sections and then it iterates them
+// executing all operations inside, to have a final result
 func (c *Core) Execute(ctx context.Context, text string) (Result, error) {
 	var sg []float64
 	var total float64
