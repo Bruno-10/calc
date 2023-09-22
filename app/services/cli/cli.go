@@ -14,11 +14,16 @@ func main() {
 
 	// TODO: YOU CAN'T IGNORE THE ERROR!!!!
 	r := bufio.NewReader(os.Stdin)
-	text, _ := r.ReadString('\n')
+	text, err := r.ReadString('\n')
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	result, err := calc.Execute(context.Background(), text)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	for i, op := range result.SumGroup {

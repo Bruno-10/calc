@@ -1,8 +1,26 @@
+#### RUN FUNCTIONS
 build-api:
 	go build -o ./app/services/api/ ./app/services/api 
 
 run-api: build-api
 	app/services/api/./api
+
+install-gui:
+	yarn --cwd ./app/services/frontend install
+
+run-gui: install-gui
+	yarn --cwd ./app/services/frontend run start
+
+run-gui-no-cache: install-gui
+	yarn --cwd ./app/services/frontend run start --reset-cache
+
+build-cli:
+	go build -o ./app/services/cli ./app/services/cli
+
+run-cli:
+	app/services/cli/./cli
+
+#### UTILS
 
 tidy:
 	go mod tidy

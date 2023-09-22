@@ -19,7 +19,6 @@ import (
 	"github.com/ardanlabs/conf/v3"
 )
 
-// TODO: Delete OT, Too much for a simple project.
 var build = "develop"
 
 func main() {
@@ -64,7 +63,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 			WriteTimeout    time.Duration `conf:"default:10s"`
 			IdleTimeout     time.Duration `conf:"default:120s"`
 			ShutdownTimeout time.Duration `conf:"default:20s"`
-			APIHost         string        `conf:"default:192.168.1.91:3000"`
+			APIHost         string        `conf:"default:192.168.100.6:3000"`
 			DebugHost       string        `conf:"default:127.0.0.1:4000"`
 		}
 	}{

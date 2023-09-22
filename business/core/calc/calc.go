@@ -1,3 +1,5 @@
+// Package calc provides the core business API.
+// This layer wraps handles all the logic needed to execute operations.
 package calc
 
 import (
@@ -9,7 +11,7 @@ import (
 	"github.com/Bruno-10/calc/foundation/logger"
 )
 
-// TODO: Exported identifier without comment.
+// Result represents the Execute API web response.
 type Result struct {
 	Total    float64   `json:"total"`
 	SumGroup []float64 `json:"sumGroup"`
@@ -29,25 +31,23 @@ func NewCore(log *logger.Logger) *Core {
 	}
 }
 
-// TODO: Unexported doesn't need a comment, but if you will add it, all comments
-// must be proper sentences with proper sentence structure.
-// sum adds two float64
+// sum adds two float64.
 func sum(cs float64, cf float64) float64 {
 	return cs + cf
 }
 
-// multiply multiplies two float64
+// multiply multiplies two float64.
 func multiply(cs float64, cf float64) float64 {
 	return cs * cf
 }
 
-// divide divides two float64
+// divide divides two float64.
 func divide(cs float64, cf float64) float64 {
 	return cs / cf
 }
 
 // calculate takes a string and while it iterates through it, it does two things
-// executes operations, and separates into groups when it encounters a ,
+// executes operations, and separates into groups when it encounters a ",".
 func calculate(text string) (float64, error) {
 	text = "+" + text
 
@@ -69,7 +69,7 @@ func calculate(text string) (float64, error) {
 
 		op, ok := ops[vString]
 		if ok {
-			cns, _ = strings.CutSuffix(cns, vString)
+			cns = strings.TrimSuffix(cns, vString)
 			lop = op
 
 			if cns != "" {
@@ -86,12 +86,12 @@ func calculate(text string) (float64, error) {
 			if cns != "" && lns != "" && lop != nil && (nopok || string(text[i+1]) == "\n") {
 				cf, err := strconv.ParseFloat(cns, 64)
 				if err != nil {
-					return 0, fmt.Errorf("Parsing cf: %w", err)
+					return 0, fmt.Errorf("parsing cf: %w", err)
 				}
 
 				lf, err := strconv.ParseFloat(lns, 64)
 				if err != nil {
-					return 0, fmt.Errorf("Parsing lf: %w", err)
+					return 0, fmt.Errorf("parsing lf: %w", err)
 				}
 
 				cs = lop(lf, cf)
@@ -119,8 +119,7 @@ func Execute(ctx context.Context, text string) (Result, error) {
 	var sg []float64
 	var total float64
 
-	// TODO: IT IS A SMELL WHEN USING THE BLANK IDENTIFIER. CHECK THAT BOOLEAN.
-	text, _ = strings.CutSuffix(text, ",")
+	text = strings.TrimSuffix(text, ",")
 	sections := strings.Split(text, ",")
 
 	for _, v := range sections {
@@ -131,7 +130,7 @@ func Execute(ctx context.Context, text string) (Result, error) {
 			for _, sv := range sums {
 				ts, err := calculate(sv + "\n")
 				if err != nil {
-					return Result{}, fmt.Errorf("Calculate error: %w", err)
+					return Result{}, fmt.Errorf("calculate error: %w", err)
 				}
 				st += ts
 			}
