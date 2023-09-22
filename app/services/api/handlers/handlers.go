@@ -9,7 +9,6 @@ import (
 	"github.com/Bruno-10/calc/business/web/v1/mid"
 	"github.com/Bruno-10/calc/foundation/logger"
 	"github.com/Bruno-10/calc/foundation/web"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Options represent optional parameters.
@@ -29,7 +28,6 @@ type APIMuxConfig struct {
 	Build    string
 	Shutdown chan os.Signal
 	Log      *logger.Logger
-	Tracer   trace.Tracer
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
@@ -41,7 +39,6 @@ func APIMux(cfg APIMuxConfig, options ...func(opts *Options)) http.Handler {
 
 	app := web.NewApp(
 		cfg.Shutdown,
-		cfg.Tracer,
 		mid.Logger(cfg.Log),
 		mid.Errors(cfg.Log),
 	)

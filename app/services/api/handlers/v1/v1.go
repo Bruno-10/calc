@@ -28,5 +28,4 @@ func Routes(app *web.App, cfg Config) {
 	cgh := calcgrp.New(calcCore)
 
 	app.Handle(http.MethodPost, version, "/execute", cgh.Execute)
-
 }

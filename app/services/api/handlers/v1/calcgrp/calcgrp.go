@@ -1,3 +1,4 @@
+// Package calcgrp mantains the group of handlers needed to execute operations.
 package calcgrp
 
 import (
@@ -22,6 +23,7 @@ func New(calc *calc.Core) *Handlers {
 	}
 }
 
+// Execute handles the operations required by input.
 func (h *Handlers) Execute(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var input struct{ Input string }
 	if err := web.Decode(r, &input); err != nil {
