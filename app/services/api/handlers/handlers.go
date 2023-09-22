@@ -41,6 +41,7 @@ func APIMux(cfg APIMuxConfig, options ...func(opts *Options)) http.Handler {
 		cfg.Shutdown,
 		mid.Logger(cfg.Log),
 		mid.Errors(cfg.Log),
+		mid.Panics(),
 	)
 
 	if opts.corsOrigin != "" {
@@ -53,5 +54,4 @@ func APIMux(cfg APIMuxConfig, options ...func(opts *Options)) http.Handler {
 	})
 
 	return app
-
 }

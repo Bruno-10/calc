@@ -42,3 +42,8 @@ vuln-check:
 test: test-only lint vuln-check
 
 test-race: test-race lint vuln-check
+
+deps-upgrade:
+	go get -u -v ./...
+	go mod tidy
+	go mod vendor

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"expvar"
 	"fmt"
 	"net/http"
 	"os"
@@ -63,8 +62,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 			WriteTimeout    time.Duration `conf:"default:10s"`
 			IdleTimeout     time.Duration `conf:"default:120s"`
 			ShutdownTimeout time.Duration `conf:"default:20s"`
-			APIHost         string        `conf:"default:192.168.100.6:3000"`
-			DebugHost       string        `conf:"default:127.0.0.1:4000"`
+			APIHost         string        `conf:"default:0.0.0.0:3000"`
+			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 		}
 	}{
 		Version: conf.Version{
@@ -94,8 +93,6 @@ func run(ctx context.Context, log *logger.Logger) error {
 		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Info(ctx, "startup", "config", out)
-
-	expvar.NewString("build").Set(build)
 
 	// -------------------------------------------------------------------------
 	// Initialize authentication support

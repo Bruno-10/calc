@@ -25,7 +25,10 @@ func New(calc *calc.Core) *Handlers {
 
 // Execute handles the operations required by input.
 func (h *Handlers) Execute(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var input struct{ Input string }
+	var input struct {
+		Input string
+	}
+
 	if err := web.Decode(r, &input); err != nil {
 		return v1.NewRequestError(err, http.StatusBadRequest)
 	}
@@ -36,5 +39,4 @@ func (h *Handlers) Execute(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	return web.Respond(ctx, w, result, http.StatusOK)
-
 }

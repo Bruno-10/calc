@@ -7,12 +7,14 @@ import (
 	"os"
 
 	"github.com/Bruno-10/calc/business/core/calc"
+	"github.com/Bruno-10/calc/foundation/logger"
 )
 
 func main() {
+	core := calc.NewCore(logger.New(os.Stdout, logger.LevelInfo, "CALC", func(ctx context.Context) string { return "" }))
+
 	fmt.Print("Enter text: ")
 
-	// TODO: YOU CAN'T IGNORE THE ERROR!!!!
 	r := bufio.NewReader(os.Stdin)
 	text, err := r.ReadString('\n')
 	if err != nil {
@@ -20,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	result, err := calc.Execute(context.Background(), text)
+	result, err := core.Execute(context.Background(), text)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

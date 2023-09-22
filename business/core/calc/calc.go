@@ -11,40 +11,49 @@ import (
 	"github.com/Bruno-10/calc/foundation/logger"
 )
 
-// Result represents the Execute API web response.
-type Result struct {
-	Total    float64   `json:"total"`
-	SumGroup []float64 `json:"sumGroup"`
-}
-
 // Core manages the set of APIs for user access.
 type Core struct {
-	Execute func(ctx context.Context, text string) (Result, error)
-	log     *logger.Logger
+	log *logger.Logger
 }
 
 // NewCore constructs a core for user api access.
 func NewCore(log *logger.Logger) *Core {
 	return &Core{
-		Execute: Execute,
-		log:     log,
+		log: log,
 	}
 }
 
-// sum adds two float64.
-func sum(cs float64, cf float64) float64 {
-	return cs + cf
+// Execute does what!!!!
+func (c *Core) Execute(ctx context.Context, text string) (Result, error) {
+	var sg []float64
+	var total float64
+
+	text = strings.TrimSuffix(text, ",")
+	sections := strings.Split(text, ",")
+
+	for _, v := range sections {
+		if v != "\n" {
+			sums := strings.Split(v, "+")
+
+			var st float64
+			for _, sv := range sums {
+				ts, err := calculate(sv + "\n")
+				if err != nil {
+					return Result{}, fmt.Errorf("calculate error: %w", err)
+				}
+
+				st += ts
+			}
+
+			total += st
+			sg = append(sg, st)
+		}
+	}
+
+	return Result{total, sg}, nil
 }
 
-// multiply multiplies two float64.
-func multiply(cs float64, cf float64) float64 {
-	return cs * cf
-}
-
-// divide divides two float64.
-func divide(cs float64, cf float64) float64 {
-	return cs / cf
-}
+// =============================================================================
 
 // calculate takes a string and while it iterates through it, it does two things
 // executes operations, and separates into groups when it encounters a ",".
@@ -99,6 +108,7 @@ func calculate(text string) (float64, error) {
 				lns = ""
 				lop = nil
 			}
+
 			continue
 		}
 
@@ -106,39 +116,28 @@ func calculate(text string) (float64, error) {
 			cns = strings.ReplaceAll(cns, vString, "")
 
 			cf, err := strconv.ParseFloat(cns, 64)
-			if err == nil {
-				cs = cf
+			if err != nil {
+				continue
 			}
+
+			cs = cf
 		}
 	}
 
 	return cs, nil
 }
 
-func Execute(ctx context.Context, text string) (Result, error) {
-	var sg []float64
-	var total float64
+// sum adds two float64.
+func sum(cs float64, cf float64) float64 {
+	return cs + cf
+}
 
-	text = strings.TrimSuffix(text, ",")
-	sections := strings.Split(text, ",")
+// multiply multiplies two float64.
+func multiply(cs float64, cf float64) float64 {
+	return cs * cf
+}
 
-	for _, v := range sections {
-		if v != "\n" {
-			sums := strings.Split(v, "+")
-
-			var st float64
-			for _, sv := range sums {
-				ts, err := calculate(sv + "\n")
-				if err != nil {
-					return Result{}, fmt.Errorf("calculate error: %w", err)
-				}
-				st += ts
-			}
-
-			total += st
-			sg = append(sg, st)
-		}
-	}
-
-	return Result{total, sg}, nil
+// divide divides two float64.
+func divide(cs float64, cf float64) float64 {
+	return cs / cf
 }
