@@ -17,7 +17,7 @@ run-gui-no-cache: install-gui
 build-cli:
 	go build -o ./app/services/cli ./app/services/cli
 
-run-cli:
+run-cli: build-cli
 	app/services/cli/./cli
 
 #### UTILS

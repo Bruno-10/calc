@@ -2,6 +2,7 @@ import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, TextInput, View, Text, ScrollView } from 'react-native';
 import { CALC_API } from '@env';
+import { useFonts } from 'expo-font';
 
 export default function App() {
     const [number, onChangeNumber] = React.useState('');
@@ -9,6 +10,11 @@ export default function App() {
     const [response, setResponse] = React.useState({
         total: null,
         sumGroup: [],
+    });
+
+    const [fontsLoaded] = useFonts({
+        'Bai-Jamjuree': require('./assets/fonts/BaiJamjuree-Regular.ttf'),
+        'Bai-Jamjuree-Bold': require('./assets/fonts/BaiJamjuree-Bold.ttf'),
     });
 
     function execute(event) {
@@ -26,11 +32,16 @@ export default function App() {
                 return r.json();
             })
             .then((r) => {
+                setError('');
                 setResponse(r);
             })
             .catch((e) => {
                 setError(e.message);
             });
+    }
+
+    if (!fontsLoaded) {
+        return null;
     }
 
     return (
@@ -70,6 +81,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
     container: {
+        fontFamily: 'Bai-Jamjuree',
         flex: 1,
         backgroundColor: '#eee',
         alignItems: 'center',
@@ -95,6 +107,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     calc: {
+        fontFamily: 'Bai-Jamjuree-Bold',
         marginBottom: 50,
         marginTop: 50,
         fontWeight: '600',
