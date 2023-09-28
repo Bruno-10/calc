@@ -1,7 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, TextInput, View, Text, ScrollView } from 'react-native';
-import { CALC_API } from '@env';
 import { useFonts } from 'expo-font';
 
 export default function App() {
@@ -18,7 +17,7 @@ export default function App() {
     });
 
     function execute(event) {
-        fetch(`${CALC_API}execute`, {
+        fetch(`${process.env.EXPO_PUBLIC_CALC_API}execute`, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',

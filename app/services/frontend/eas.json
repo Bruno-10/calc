@@ -3,15 +3,25 @@
         "preview": {
             "android": {
                 "buildType": "apk"
+            },
+            "channel": "preview",
+            "env": {
+                "EXPO_PUBLIC_CALC_API": "https://api.brunobelucci.com/v1/"
             }
         },
         "preview2": {
             "android": {
                 "gradleCommand": ":app:assembleRelease"
+            },
+            "env": {
+                "EXPO_PUBLIC_CALC_API": "https://api.brunobelucci.com/v1/"
             }
         },
         "preview3": {
-            "developmentClient": true
+            "developmentClient": true,
+            "env": {
+                "EXPO_PUBLIC_CALC_API": "https://api.brunobelucci.com/v1/"
+            }
         },
         "production": {}
     }
