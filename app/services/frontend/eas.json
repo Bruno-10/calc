@@ -1,10 +1,10 @@
 {
     "build": {
-        "preview": {
+        "production": {
             "android": {
                 "buildType": "apk"
             },
-            "channel": "preview",
+            "channel": "production",
             "env": {
                 "EXPO_PUBLIC_CALC_API": "https://api.brunobelucci.com/v1/"
             }
